@@ -1,0 +1,140 @@
+{
+  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+      "vnetNameA": {
+          "type": "string"
+      },
+      "locationA": {
+          "type": "string"
+      },
+      "addressPrefixA": {
+          "type": "string"
+      },
+      "subnetNameA": {
+          "type": "string"
+      },
+      "subnetAddressPrefixA": {
+          "type": "string"
+      },
+      "enableDdosProtectionA": {
+          "type": "bool"
+      },
+      "vnetNameB": {
+        "type": "string"
+      },
+      "locationB": {
+          "type": "string"
+      },
+      "addressPrefixB": {
+          "type": "string"
+      },
+      "subnetNameB": {
+          "type": "string"
+      },
+      "subnetAddressPrefixB": {
+          "type": "string"
+      },
+      "enableDdosProtectionB": {
+          "type": "bool"
+      }
+  },
+  "variables": {
+      "vnetAtovnetBPeeringName": "[concat(parameters('vnetNameA'), '-', parameters('vnetNameB'))]",
+      "vnetBtovnetAPeeringName": "[concat(parameters('vnetNameB'), '-', parameters('vnetNameA'))]"
+  },
+  "resources": [
+      {
+          "apiVersion": "2019-04-01",
+          "name": "[parameters('vnetNameA')]",
+          "type": "Microsoft.Network/virtualNetworks",
+          "location": "[parameters('locationA')]",
+          "properties": {
+              "addressSpace": {
+                  "addressPrefixes": [
+                      "[parameters('addressPrefixA')]"
+                  ]
+              },
+              "subnets": [
+                  {
+                      "name": "[parameters('subnetNameA')]",
+                      "properties": {
+                          "addressPrefix": "[parameters('subnetAddressPrefixA')]",
+                          "addressPrefixes": []
+                      }
+                  }
+              ],
+              "enableDdosProtection": "[parameters('enableDdosProtectionA')]"
+          },
+          "resources": [
+            {
+                "apiVersion": "2016-06-01",
+                "type": "virtualNetworkPeerings",
+                "name": "[variables('vnetAtovnetBPeeringName')]",
+                "location": "[resourceGroup().location]",
+                "dependsOn": [
+                    "[concat('Microsoft.Network/virtualNetworks/', parameters('vnetNameA'))]",
+                    "[concat('Microsoft.Network/virtualNetworks/', parameters('vnetNameB'))]"
+                ],
+                "comments": "This is the peering from virtual network A to B",
+                "properties": {
+                    "allowVirtualNetworkAccess": "true",
+                    "allowForwardedTraffic": "false",
+                    "allowGatewayTransit": "false",
+                    "useRemoteGateways": "false",
+                    "remoteVirtualNetwork": {
+                        "id": "[resourceId('Microsoft.Network/virtualNetworks',parameters('vnetNameB'))]"
+                    }
+                }
+            }
+          ]
+      }
+      ,
+      {
+        "apiVersion": "2019-04-01",
+        "name": "[parameters('vnetNameB')]",
+        "type": "Microsoft.Network/virtualNetworks",
+        "location": "[parameters('locationB')]",
+        "properties": {
+            "addressSpace": {
+                "addressPrefixes": [
+                    "[parameters('addressPrefixB')]"
+                ]
+            },
+            "subnets": [
+                {
+                    "name": "[parameters('subnetNameB')]",
+                    "properties": {
+                        "addressPrefix": "[parameters('subnetAddressPrefixB')]",
+                        "addressPrefixes": []
+                    }
+                }
+            ],
+            "enableDdosProtection": "[parameters('enableDdosProtectionB')]"
+        }
+        ,
+        "resources": [
+          {
+            "apiVersion": "2016-06-01",
+            "type": "virtualNetworkPeerings",
+            "name": "[variables('vnetBtovnetAPeeringName')]",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[concat('Microsoft.Network/virtualNetworks/', parameters('vnetNameA'))]",
+                "[concat('Microsoft.Network/virtualNetworks/', parameters('vnetNameB'))]"
+            ],
+            "comments": "This is the peering from virtual network B to A",
+            "properties": {
+                "allowVirtualNetworkAccess": "true",
+                "allowForwardedTraffic": "false",
+                "allowGatewayTransit": "false",
+                "useRemoteGateways": "false",
+                "remoteVirtualNetwork": {
+                    "id": "[resourceId('Microsoft.Network/virtualNetworks',parameters('vnetNameA'))]"
+                }
+            }
+          }
+        ]
+    }
+  ]
+}

@@ -1,0 +1,131 @@
+{
+    "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "name": {
+            "type": "string"
+        },
+        "location": {
+            "type": "string"
+        },
+        "locationName": {
+            "type": "string"
+        },
+        "defaultExperience": {
+            "type": "string"
+        },
+        "isZoneRedundant": {
+            "type": "string"
+        },
+        "pairedLocation": {
+            "type": "string"
+        },
+        "pairedLocationName": {
+            "type": "string"
+        }
+    },
+    "variables": {},
+    "resources": [
+        {
+            "apiVersion": "2017-05-10",
+            "type": "Microsoft.Resources/deployments",
+            "name": "updateVirtualNetwork",
+            "resourceGroup": "rg-load-balancer-testing",
+            "properties": {
+                "mode": "Incremental",
+                "parameters": {},
+                "template": {
+                    "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+                    "contentVersion": "1.0.0.0",
+                    "parameters": {},
+                    "variables": {},
+                    "resources": [
+                        {
+                            "apiVersion": "2017-08-01",
+                            "name": "vn-balancer-001",
+                            "type": "Microsoft.Network/virtualNetworks",
+                            "location": "southeastasia",
+                            "properties": {
+                                "provisioningState": "Succeeded",
+                                "resourceGuid": "8ba58c45-d43f-43f0-9ac8-b97849b2b357",
+                                "addressSpace": {
+                                    "addressPrefixes": [
+                                        "10.0.0.0/24"
+                                    ]
+                                },
+                                "subnets": [
+                                    {
+                                        "name": "vn-subnet-001",
+                                        "id": "/subscriptions/a1a9e31d-5abf-4128-969c-ebbbcc1668bf/resourceGroups/rg-load-balancer-testing/providers/Microsoft.Network/virtualNetworks/vn-balancer-001/subnets/vn-subnet-001",
+                                        "etag": "W/\"8a7c3afe-274a-4f94-b35a-af3c98df32b2\"",
+                                        "properties": {
+                                            "provisioningState": "Succeeded",
+                                            "addressPrefix": "10.0.0.0/26",
+                                            "serviceEndpoints": [
+                                                {
+                                                    "service": "Microsoft.AzureCosmosDB",
+                                                    "locations": []
+                                                }
+                                            ],
+                                            "networkSecurityGroup": null,
+                                            "routeTable": null,
+                                            "ipConfigurations": [],
+                                            "applicationGatewayIPConfigurations": [],
+                                            "resourceNavigationLinks": []
+                                        },
+                                        "type": "Microsoft.Network/virtualNetworks/subnets"
+                                    }
+                                ],
+                                "virtualNetworkPeerings": [],
+                                "enableDdosProtection": false,
+                                "enableVmProtection": false,
+                                "migrationPhase": null,
+                                "dhcpOptions": null
+                            },
+                            "tags": {}
+                        }
+                    ],
+                    "outputs": {}
+                }
+            }
+        },
+        {
+            "apiVersion": "2015-04-08",
+            "kind": "GlobalDocumentDB",
+            "type": "Microsoft.DocumentDb/databaseAccounts",
+            "name": "[parameters('name')]",
+            "location": "[parameters('location')]",
+            "properties": {
+                "databaseAccountOfferType": "Standard",
+                "locations": [
+                    {
+                        "id": "[concat(parameters('name'), '-', parameters('location'))]",
+                        "failoverPriority": 0,
+                        "locationName": "[parameters('locationName')]",
+                        "isZoneRedundant": "[parameters('isZoneRedundant')]"
+                    },
+                    {
+                        "id": "[concat(parameters('name'), '-', parameters('pairedLocation'))]",
+                        "failoverPriority": 1,
+                        "locationName": "[parameters('pairedLocationName')]"
+                    }
+                ],
+                "enableMultipleWriteLocations": true,
+                "isVirtualNetworkFilterEnabled": true,
+                "virtualNetworkRules": [
+                    {
+                        "id": "/subscriptions/a1a9e31d-5abf-4128-969c-ebbbcc1668bf/resourceGroups/rg-load-balancer-testing/providers/Microsoft.Network/virtualNetworks/vn-balancer-001/subnets/vn-subnet-001"
+                    }
+                ],
+                "ipRangeFilter": "104.42.195.92,40.76.54.131,52.176.6.30,52.169.50.45,52.187.184.26",
+                "dependsOn": [
+                    "Microsoft.Resources/deployments/updateVirtualNetwork"
+                ]
+            },
+            "tags": {
+                "defaultExperience": "[parameters('defaultExperience')]"
+            }
+        }
+    ],
+    "outputs": {}
+}
